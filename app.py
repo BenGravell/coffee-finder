@@ -88,8 +88,9 @@ def query_osm(amenity, radius, location_lat, location_lon):
     return response.json()
 
 
-def df_from_query_data(data):
+def df_from_query_data(data, deny_list, max_results, attempt_reverse):
     place_datas = []
+    num_place_datas = 0
     for element in data["elements"]:
         name, address, website, lat, lon = None, None, None, None, None
 
@@ -112,13 +113,22 @@ def df_from_query_data(data):
                 address = f"{housenumber} {street}"
             else:
                 # Fall back to reverse geocoding by lat/lon if necessary
-                address = get_address((lat, lon))
+                if attempt_reverse:
+                    address = get_address((lat, lon))
             if "website" in tags:
                 website = tags["website"]
 
-        if not any([val is None for val in [name, lat, lon]]):
-            place_data = {"name": name, "address": address, "website": website, "latitude": lat, "longitude": lon}
+        place_data = {"name": name, "address": address, "website": website, "latitude": lat, "longitude": lon}
+        check_none = not any([val is None for val in [name, lat, lon]])
+        if not check_none:
+            continue
+        check_deny = not any(deny_name.lower() in name.lower() for deny_name in deny_list)
+        if check_none and check_deny:
             place_datas.append(place_data)
+            num_place_datas += 1
+        
+        if num_place_datas >= max_results:
+            break
 
     if not place_datas:
         st.error("No matches found!")
@@ -128,10 +138,7 @@ def df_from_query_data(data):
     return df
 
 
-def process_df_from_options(df, deny_list, location_latlon):
-    df["valid"] = df.name.apply(lambda x: not any(deny_name.lower() in x.lower() for deny_name in deny_list))
-    df = df[df["valid"]]
-
+def process_df_from_options(df, location_latlon):
     # Add distance column
     df["distance (km)"] = df.apply(
         lambda row: round(get_distance((row.latitude, row.longitude), location_latlon) / 1000, 2), axis=1
@@ -188,6 +195,8 @@ def main():
             radius_km = st.number_input(label="Search Radius (km)", min_value=0.0, max_value=10.0, value=2.0, step=0.1, format="%.1f")
             deny_list = st.multiselect("Exclude Tags", ["Starbucks", "Dunkin"], ["Starbucks", "Dunkin"])
             travelmode = st.selectbox("Travel Mode for Google Maps directions", options=["walking", "driving"])
+            max_results = st.number_input(label="Maximum Number of Results", min_value=1, max_value=1000, value=20)
+            attempt_reverse = st.checkbox("Attempt Reverse Geocoding for missing address from OpenStreetMaps?", help="May increase run time.")
             st.form_submit_button("Submit Search")
 
     radius = int(radius_km * 1000)
@@ -200,9 +209,10 @@ def main():
 
     # Query OpenStreetMaps to get place data & process it
     data = query_osm(amenity, radius, location_lat, location_lon)
-    df = df_from_query_data(data)
-    df = process_df_from_options(df, deny_list, location_latlon)
+    df = df_from_query_data(data, deny_list, max_results, attempt_reverse)
+    df = process_df_from_options(df, location_latlon)
     df = df.reset_index(drop=True)
+    df.index += 1
 
     # Show an interactive map
     generate_map(df, amenity, location, location_latlon, radius, travelmode)
@@ -210,11 +220,10 @@ def main():
     st.write(f"Found {df.shape[0]} matches.")
 
     # Show a downloadable table
-    ddf = df.drop(columns="valid")
-    st.dataframe(ddf, use_container_width=True)
+    st.dataframe(df, use_container_width=True)
     st.download_button(
         label="Download CSV",
-        data=convert_df(ddf),
+        data=convert_df(df),
         file_name="results.csv",
     )
 
