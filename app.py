@@ -6,7 +6,7 @@ import geopy.distance
 from geopy.geocoders import Nominatim
 import folium
 import streamlit as st
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium
 
 import config
 
@@ -149,7 +149,6 @@ def process_df_from_options(df, location_latlon):
 
 
 def generate_map(df, amenity, location, location_latlon, radius, travelmode):
-    # Folium map
     m = folium.Map(location=location_latlon, zoom_start=3, control_scale=True)
 
     fit_bounds_from_df(m, df)
@@ -181,7 +180,7 @@ def generate_map(df, amenity, location, location_latlon, radius, travelmode):
         location=location_latlon, radius=radius, color="grey", opacity=0.5, dash_array="10", fill=True, fill_opacity=0.2
     ).add_to(m)
 
-    folium_static(m)
+    st_folium(m, use_container_width=True, returned_objects=[])
 
 
 def main():
