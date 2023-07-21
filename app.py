@@ -126,7 +126,7 @@ def df_from_query_data(data, deny_list, max_results, attempt_reverse):
         if check_none and check_deny:
             place_datas.append(place_data)
             num_place_datas += 1
-        
+
         if num_place_datas >= max_results:
             break
 
@@ -192,11 +192,15 @@ def main():
                 label="Amenity", value="cafe", help="See https://wiki.openstreetmap.org/wiki/Key:amenity for details."
             )
             location = st.text_input(label="Location", value="Boston, MA", help="Use a city name or address.")
-            radius_km = st.number_input(label="Search Radius (km)", min_value=0.0, max_value=10.0, value=2.0, step=0.1, format="%.1f")
+            radius_km = st.number_input(
+                label="Search Radius (km)", min_value=0.0, max_value=10.0, value=2.0, step=0.1, format="%.1f"
+            )
             deny_list = st.multiselect("Exclude Tags", ["Starbucks", "Dunkin"], ["Starbucks", "Dunkin"])
             travelmode = st.selectbox("Travel Mode for Google Maps directions", options=["walking", "driving"])
             max_results = st.number_input(label="Maximum Number of Results", min_value=1, max_value=1000, value=20)
-            attempt_reverse = st.checkbox("Attempt Reverse Geocoding for missing address from OpenStreetMaps?", help="May increase run time.")
+            attempt_reverse = st.checkbox(
+                "Attempt Reverse Geocoding for missing address from OpenStreetMaps?", help="May increase run time."
+            )
             st.form_submit_button("Submit Search")
 
     radius = int(radius_km * 1000)
@@ -210,6 +214,9 @@ def main():
     # Query OpenStreetMaps to get place data & process it
     data = query_osm(amenity, radius, location_lat, location_lon)
     df = df_from_query_data(data, deny_list, max_results, attempt_reverse)
+    if df is None:
+        return
+
     df = process_df_from_options(df, location_latlon)
     df = df.reset_index(drop=True)
     df.index += 1
