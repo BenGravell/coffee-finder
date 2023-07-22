@@ -88,10 +88,10 @@ def query_osm(amenity, radius, location_lat, location_lon):
     return response.json()
 
 
-def df_from_query_data(data, deny_list, max_results, attempt_reverse):
+def df_from_query_data(query_data, deny_list, max_results, attempt_reverse):
     place_datas = []
     num_place_datas = 0
-    for element in data["elements"]:
+    for element in query_data["elements"]:
         name, address, website, lat, lon = None, None, None, None, None
 
         if element["type"] == "node":
@@ -111,6 +111,13 @@ def df_from_query_data(data, deny_list, max_results, attempt_reverse):
                 street = tags["addr:street"]
                 housenumber = tags["addr:housenumber"]
                 address = f"{housenumber} {street}"
+                if "addr:city" in tags and "addr:state" in tags:
+                    city = tags["addr:city"]
+                    state = tags["addr:state"]
+                    address += f", {city}, {state}"
+                    if "addr:postcode" in tags:
+                        postcode = tags["addr:postcode"]
+                        address += f" {postcode}"
             else:
                 # Fall back to reverse geocoding by lat/lon if necessary
                 if attempt_reverse:
@@ -131,11 +138,9 @@ def df_from_query_data(data, deny_list, max_results, attempt_reverse):
             break
 
     if not place_datas:
-        st.error("No matches found!")
         return None
 
-    df = pd.DataFrame(place_datas)
-    return df
+    return pd.DataFrame(place_datas)
 
 
 def process_df_from_options(df, location_latlon):
@@ -211,9 +216,10 @@ def main():
         return None
 
     # Query OpenStreetMaps to get place data & process it
-    data = query_osm(amenity, radius, location_lat, location_lon)
-    df = df_from_query_data(data, deny_list, max_results, attempt_reverse)
+    query_data = query_osm(amenity, radius, location_lat, location_lon)
+    df = df_from_query_data(query_data, deny_list, max_results, attempt_reverse)
     if df is None:
+        st.error("No matches found!")
         return
 
     df = process_df_from_options(df, location_latlon)
@@ -223,7 +229,7 @@ def main():
     # Show an interactive map
     generate_map(df, amenity, location, location_latlon, radius, travelmode)
 
-    st.write(f"Found {df.shape[0]} matches.")
+    st.metric("Number of Matches", df.shape[0])
 
     # Show a downloadable table
     st.dataframe(df, use_container_width=True)
