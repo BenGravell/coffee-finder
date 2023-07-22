@@ -1,4 +1,4 @@
-from urllib.parse import quote
+from urllib.parse import urlencode
 import requests
 
 import pandas as pd
@@ -14,7 +14,7 @@ import config
 st.set_page_config(page_title="Coffee Finder", page_icon="☕")
 
 
-@st.cache_data
+@st.cache_data(ttl=1 * 60 * 60)  # ttl of 1 hour
 def convert_df(df):
     return df.to_csv().encode("utf-8")
 
@@ -51,26 +51,10 @@ def fit_bounds_from_df(m, df):
     m.fit_bounds([sw, ne])
 
 
-def dict_to_html(dictionary):
-    html = "<table>\n"
-    for key, value in dictionary.items():
-        html += f"<tr><td>{key}</td><td>{value}</td></tr>\n"
-    html += "</table>"
-    return html
-
-
-def make_google_maps_directions_link(params):
-    base_str = f"https://www.google.com/maps/dir/?api=1"
-    params_str = ""
-    for param in params:
-        params_str += f"&{param[0]}={quote(param[1])}"
-    return base_str + params_str
-
-
 def address2gmaps_directions_link(address, travelmode):
     # https://developers.google.com/maps/documentation/urls/get-started#directions-action
-    gmaps_params = [["destination", address], ["travelmode", travelmode]]
-    return make_google_maps_directions_link(gmaps_params)
+    params = {"destination": address, "travelmode": travelmode}
+    return f"https://www.google.com/maps/dir/?api=1&{urlencode(params)}"
 
 
 @st.cache_data(ttl=config.TTL)
