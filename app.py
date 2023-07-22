@@ -51,9 +51,9 @@ def fit_bounds_from_df(m, df):
     m.fit_bounds([sw, ne])
 
 
-def address2gmaps_directions_link(address, travelmode):
+def get_gmaps_directions_link(name, address, travelmode):
     # https://developers.google.com/maps/documentation/urls/get-started#directions-action
-    params = {"destination": address, "travelmode": travelmode}
+    params = {"destination": f"{name}, {address}", "travelmode": travelmode}
     return f"https://www.google.com/maps/dir/?api=1&{urlencode(params)}"
 
 
@@ -137,6 +137,14 @@ def process_df_from_options(df, location_latlon):
     return df
 
 
+def html_tag_wrap(x, tag):
+    return f"<{tag}>{x}</{tag}>"
+
+
+def html_anchor_wrap(text, url):
+    return f'<a href={url} target="_blank" rel="noopener noreferrer">{text}</a>'
+
+
 def generate_map(df, amenity, location, location_latlon, radius, travelmode):
     m = folium.Map(location=location_latlon, zoom_start=3, control_scale=True)
 
@@ -144,10 +152,29 @@ def generate_map(df, amenity, location, location_latlon, radius, travelmode):
 
     # Loop through each row in the dataframe
     for i, row in df.iterrows():
-        if row["address"] is None:
-            google_maps_html = f'(no address available, try a Google search for "{row["name"]} ({row["latitude"]}, {row["longitude"]})")'
+        if row["website"] is None:
+            popup_header_text = row["name"]
         else:
-            google_maps_html = f'<a href={address2gmaps_directions_link(row["address"], travelmode)} target="_blank" rel="noopener noreferrer">{row["name"]}</a>'
+            popup_header_text = html_anchor_wrap(text=row["name"], url=row["website"])
+
+        popup_header = html_tag_wrap(popup_header_text, "strong")
+
+        if row["address"] is None:
+            popup_address = f'(no address available, try a Google search for "{row["name"]} ({row["latitude"]}, {row["longitude"]})")'
+            popup_google_maps = ""
+        else:
+            popup_address = html_tag_wrap(row["address"], "small")
+
+            popup_google_maps = html_tag_wrap(
+                html_anchor_wrap(
+                    text="Google Maps", url=get_gmaps_directions_link(row["name"], row["address"], travelmode)
+                ),
+                "small",
+            )
+
+        popup_distance = html_tag_wrap(f'({row["distance (km)"]} km away)', "small")
+
+        popup_html = f"{popup_header} <br> {popup_address} <br> {popup_google_maps} <br> {popup_distance}"
 
         # Add each row to the map
         # icons: https://github.com/lennardv2/Leaflet.awesome-markers/blob/2.0/develop/examples/basic-example.html
@@ -156,8 +183,8 @@ def generate_map(df, amenity, location, location_latlon, radius, travelmode):
         folium.Marker(
             location=[row["latitude"], row["longitude"]],
             icon=folium.Icon(color=color, icon=icon, prefix="fa"),
-            popup=google_maps_html,
-            tooltip=f"{row['name']} (Click for Google Maps directions)",
+            popup=folium.Popup(popup_html, min_width=200, max_width=300),
+            tooltip=f"{row['name']} (click for details)",
         ).add_to(m)
 
     folium.Marker(
