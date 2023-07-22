@@ -196,7 +196,7 @@ def main():
             )
             deny_list = st.multiselect("Exclude Tags", ["Starbucks", "Dunkin"], ["Starbucks", "Dunkin"])
             travelmode = st.selectbox("Travel Mode for Google Maps directions", options=["walking", "driving"])
-            max_results = st.number_input(label="Maximum Number of Results", min_value=1, max_value=1000, value=20)
+            max_results = st.number_input(label="Maximum Number of Results", min_value=1, max_value=1000, value=100)
             attempt_reverse = st.checkbox(
                 "Attempt Reverse Geocoding for missing address from OpenStreetMaps?", help="May increase run time."
             )
