@@ -51,9 +51,9 @@ def fit_bounds_from_df(m, df):
     m.fit_bounds([sw, ne])
 
 
-def get_gmaps_directions_link(name, address, travelmode):
+def get_gmaps_directions_link(destination, travelmode):
     # https://developers.google.com/maps/documentation/urls/get-started#directions-action
-    params = {"destination": f"{name}, {address}", "travelmode": travelmode}
+    params = {"destination": destination, "travelmode": travelmode}
     return f"https://www.google.com/maps/dir/?api=1&{urlencode(params)}"
 
 
@@ -145,48 +145,60 @@ def html_anchor_wrap(text, url):
     return f'<a href={url} target="_blank" rel="noopener noreferrer">{text}</a>'
 
 
+def get_popup(row, travelmode):
+    # Header
+    if row["website"] is None:
+        header_content = row["name"]
+    else:
+        header_content = html_anchor_wrap(text=row["name"], url=row["website"])
+    header = html_tag_wrap(header_content, "strong")
+
+    # Address & Google Maps Directions
+    if row["address"] is None:
+        address_text = "(no address available)"
+        google_maps_destination = f'{row["latitude"]},{row["longitude"]}'
+    else:
+        address_text = row["address"]
+        google_maps_destination = f'{row["name"]}, {row["address"]}'
+    address = html_tag_wrap(address_text, "small")
+    google_maps_content = html_anchor_wrap(
+        text="Google Maps", url=get_gmaps_directions_link(google_maps_destination, travelmode)
+    )
+    google_maps = html_tag_wrap(google_maps_content, "small")
+
+    # Distance
+    distance = html_tag_wrap(f'({row["distance (km)"]} km away)', "small")
+
+    # Full HTML
+    html = f"{header} <br> {address} <br> {google_maps} <br> {distance}"
+
+    return folium.Popup(html, min_width=200, max_width=300)
+
+
+def get_marker(row, travelmode, amenity):
+    # icons: https://github.com/lennardv2/Leaflet.awesome-markers/blob/2.0/develop/examples/basic-example.html
+    return folium.Marker(
+        location=[row["latitude"], row["longitude"]],
+        icon=folium.Icon(
+            color="green",
+            icon="coffee" if amenity == "cafe" else "cube",
+            prefix="fa",
+        ),
+        popup=get_popup(row, travelmode),
+        tooltip=f"{row['name']} (click for details)",
+    )
+
+
 def generate_map(df, amenity, location, location_latlon, radius, travelmode):
     m = folium.Map(location=location_latlon, zoom_start=3, control_scale=True)
 
     fit_bounds_from_df(m, df)
 
-    # Loop through each row in the dataframe
+    # Add a marker for each result row
     for i, row in df.iterrows():
-        if row["website"] is None:
-            popup_header_text = row["name"]
-        else:
-            popup_header_text = html_anchor_wrap(text=row["name"], url=row["website"])
+        get_marker(row, travelmode, amenity).add_to(m)
 
-        popup_header = html_tag_wrap(popup_header_text, "strong")
-
-        if row["address"] is None:
-            popup_address = f'(no address available, try a Google search for "{row["name"]} ({row["latitude"]}, {row["longitude"]})")'
-            popup_google_maps = ""
-        else:
-            popup_address = html_tag_wrap(row["address"], "small")
-
-            popup_google_maps = html_tag_wrap(
-                html_anchor_wrap(
-                    text="Google Maps", url=get_gmaps_directions_link(row["name"], row["address"], travelmode)
-                ),
-                "small",
-            )
-
-        popup_distance = html_tag_wrap(f'({row["distance (km)"]} km away)', "small")
-
-        popup_html = f"{popup_header} <br> {popup_address} <br> {popup_google_maps} <br> {popup_distance}"
-
-        # Add each row to the map
-        # icons: https://github.com/lennardv2/Leaflet.awesome-markers/blob/2.0/develop/examples/basic-example.html
-        color = "green"
-        icon = "coffee" if amenity == "cafe" else "cube"
-        folium.Marker(
-            location=[row["latitude"], row["longitude"]],
-            icon=folium.Icon(color=color, icon=icon, prefix="fa"),
-            popup=folium.Popup(popup_html, min_width=200, max_width=300),
-            tooltip=f"{row['name']} (click for details)",
-        ).add_to(m)
-
+    # Add marker for the center location
     folium.Marker(
         location_latlon, tooltip=location, icon=folium.Icon(color="lightgray", icon="home", prefix="fa")
     ).add_to(m)
