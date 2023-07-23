@@ -13,8 +13,34 @@ import config
 
 st.set_page_config(page_title="Coffee Finder", page_icon="☕")
 
+if not st.session_state.get("geolocator"):
+    st.session_state.geolocator = Nominatim(user_agent="coffee_finder_app")
 
-@st.cache_data(ttl=1 * 60 * 60)  # ttl of 1 hour
+
+AMENITY_OPTIONS = [
+    "bar",
+    "biergarten",
+    "cafe",
+    "fast_food",
+    "food_court",
+    "ice_cream",
+    "pub",
+    "restaurant",
+]
+
+AMENITY_ICON_DICT = {
+    "bar": "beer",
+    "biergarten": "beer",
+    "cafe": "coffee",
+    "fast_food": "cutlery",
+    "food_court": "cutlery",
+    "ice_cream": "diamond",
+    "pub": "beer",
+    "restaurant": "cutlery",
+}
+
+
+@st.cache_data(max_entries=100)
 def convert_df(df):
     return df.to_csv().encode("utf-8")
 
@@ -25,8 +51,7 @@ def get_distance(x, y):
 
 @st.cache_data(ttl=config.TTL)
 def get_latitude_longitude(city_name):
-    geolocator = Nominatim(user_agent="coffee_finder_app")
-    location = geolocator.geocode(city_name)
+    location = st.session_state.geolocator.geocode(city_name)
 
     if location:
         return location.latitude, location.longitude
@@ -36,8 +61,7 @@ def get_latitude_longitude(city_name):
 
 @st.cache_data(ttl=config.TTL)
 def get_address(coords):
-    geolocator = Nominatim(user_agent="coffee_finder_app")
-    location = geolocator.reverse(coords)
+    location = st.session_state.geolocator.reverse(coords)
 
     if location:
         return location.address
@@ -176,12 +200,13 @@ def get_popup(row, travelmode):
 
 
 def get_marker(row, travelmode, amenity):
-    # icons: https://github.com/lennardv2/Leaflet.awesome-markers/blob/2.0/develop/examples/basic-example.html
+    # icons: https://fontawesome.com/v4/icons/
+    # examples: https://github.com/lennardv2/Leaflet.awesome-markers/blob/2.0/develop/examples/basic-example.html
     return folium.Marker(
         location=[row["latitude"], row["longitude"]],
         icon=folium.Icon(
             color="green",
-            icon="coffee" if amenity == "cafe" else "cube",
+            icon=AMENITY_ICON_DICT[amenity],
             prefix="fa",
         ),
         popup=get_popup(row, travelmode),
@@ -215,15 +240,23 @@ def main():
     # Options
     with st.sidebar:
         with st.form("options_form"):
-            amenity = st.text_input(
-                label="Amenity", value="cafe", help="See https://wiki.openstreetmap.org/wiki/Key:amenity for details."
+            amenity = st.selectbox(
+                label="Amenity",
+                options=AMENITY_OPTIONS,
+                format_func=lambda x: x.replace("_", " ").title(),
+                index=AMENITY_OPTIONS.index("cafe"),
+                help="See https://wiki.openstreetmap.org/wiki/Key:amenity for details.",
             )
             location = st.text_input(label="Location", value="Boston, MA", help="Use a city name or address.")
             radius_km = st.number_input(
                 label="Search Radius (km)", min_value=0.0, max_value=10.0, value=2.0, step=0.1, format="%.1f"
             )
             deny_list = st.multiselect("Exclude Tags", ["Starbucks", "Dunkin"], ["Starbucks", "Dunkin"])
-            travelmode = st.selectbox("Travel Mode for Google Maps directions", options=["walking", "driving"])
+            travelmode = st.selectbox(
+                "Travel Mode for Google Maps directions",
+                options=["walking", "driving"],
+                format_func=lambda x: x.title(),
+            )
             max_results = st.number_input(label="Maximum Number of Results", min_value=1, max_value=1000, value=100)
             attempt_reverse = st.checkbox(
                 "Attempt Reverse Geocoding for missing address from OpenStreetMaps?", help="May increase run time."
