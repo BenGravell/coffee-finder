@@ -11,7 +11,7 @@ from streamlit_folium import st_folium
 import config
 
 
-st.set_page_config(page_title="Coffee Finder", page_icon="☕")
+st.set_page_config(page_title="Coffee Finder", page_icon=":coffee:")
 
 if not st.session_state.get("geolocator"):
     st.session_state.geolocator = Nominatim(user_agent="coffee_finder_app")
@@ -237,6 +237,7 @@ def generate_map(df, amenity, location, location_latlon, radius, travelmode):
 
 
 def main():
+    st.title(":coffee: Coffee Finder", anchor=False)
     # Options
     with st.sidebar:
         with st.form("options_form"):
