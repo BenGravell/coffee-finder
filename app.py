@@ -260,7 +260,8 @@ def main():
             )
             max_results = st.number_input(label="Maximum Number of Results", min_value=1, max_value=1000, value=100)
             attempt_reverse = st.checkbox(
-                "Attempt Reverse Geocoding for missing address from OpenStreetMaps?", help="Use latitude and longitude coordinates for reverse geocoding. Can be used to provide much more complete address information. Will increase run time for each location that is reverse geocoded."
+                "Attempt Reverse Geocoding for missing address from OpenStreetMaps?",
+                help="Use latitude and longitude coordinates for reverse geocoding. Can be used to provide much more complete address information. Will increase run time for each location that is reverse geocoded.",
             )
             st.form_submit_button("Submit Search", use_container_width=True)
 
@@ -286,7 +287,11 @@ def main():
     # Show an interactive map
     generate_map(df, amenity, location, location_latlon, radius, travelmode)
 
-    st.metric("Number of Matches", df.shape[0])
+    cols = st.columns(2)
+    with cols[0]:
+        st.metric("Number of Matches", df.shape[0])
+    with cols[1]:
+        st.metric("Nearest Match", f'{df["distance (km)"].min()} km')
 
     # Show a downloadable table
     st.dataframe(df, use_container_width=True)
