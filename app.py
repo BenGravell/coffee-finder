@@ -261,7 +261,7 @@ def main():
             attempt_reverse = st.checkbox(
                 "Attempt Reverse Geocoding for missing address from OpenStreetMaps?", help="Use latitude and longitude coordinates for reverse geocoding. Can be used to provide much more complete address information. Will increase run time for each location that is reverse geocoded."
             )
-            st.form_submit_button("Submit Search")
+            st.form_submit_button("Submit Search", use_container_width=True)
 
     radius = int(radius_km * 1000)
     location_latlon = get_latitude_longitude(location)
