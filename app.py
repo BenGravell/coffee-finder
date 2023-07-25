@@ -249,7 +249,7 @@ def main():
             )
             location = st.text_input(label="Location", value="Boston, MA", help="Use a city name or address.")
             radius_km = st.number_input(
-                label="Search Radius (km)", min_value=0.0, max_value=10.0, value=1.6, step=0.1, format="%.1f"
+                label="Search Radius (km)", min_value=0.0, max_value=100.0, value=1.6, step=0.1, format="%.1f"
             )
             deny_list = st.multiselect("Exclude Tags", ["Starbucks", "Dunkin"], ["Starbucks", "Dunkin"])
             travelmode = st.selectbox(
