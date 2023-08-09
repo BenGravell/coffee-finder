@@ -248,7 +248,14 @@ def main():
                 index=AMENITY_OPTIONS.index("cafe"),
                 help="See https://wiki.openstreetmap.org/wiki/Key:amenity for details.",
             )
-            location = st.text_input(label="Location", value="Boston, MA", help="Use a city name or address.")
+            # location = st.text_input(label="Location", value="Boston, MA", help="Use a city name or address.")
+            street_address = st.text_input("Street Address (optional)", value='1 Summer St')
+            city = st.text_input("City", value="Boston")
+            state = st.text_input("State", value="MA", help="Can use full state name or two-letter abbreviation.")
+            location = f"{city}, {state}"
+            if street_address:
+                location = f"{street_address}, {location}"
+
             radius_km = st.number_input(
                 label="Search Radius (km)", min_value=0.0, max_value=100.0, value=1.6, step=0.1, format="%.1f"
             )
