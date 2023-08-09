@@ -17,29 +17,6 @@ if not st.session_state.get("geolocator"):
     st.session_state.geolocator = Nominatim(user_agent="coffee_finder_app")
 
 
-AMENITY_OPTIONS = [
-    "bar",
-    "biergarten",
-    "cafe",
-    "fast_food",
-    "food_court",
-    "ice_cream",
-    "pub",
-    "restaurant",
-]
-
-AMENITY_ICON_DICT = {
-    "bar": "beer",
-    "biergarten": "beer",
-    "cafe": "coffee",
-    "fast_food": "cutlery",
-    "food_court": "cutlery",
-    "ice_cream": "diamond",
-    "pub": "beer",
-    "restaurant": "cutlery",
-}
-
-
 @st.cache_data(max_entries=100)
 def convert_df(df):
     return df.to_csv().encode("utf-8")
@@ -49,7 +26,7 @@ def get_distance(x, y):
     return geopy.distance.geodesic(x, y).m
 
 
-@st.cache_data(ttl=config.TTL)
+@st.cache_resource(ttl=config.TTL)
 def get_latitude_longitude(city_name):
     location = st.session_state.geolocator.geocode(city_name)
 
@@ -59,7 +36,7 @@ def get_latitude_longitude(city_name):
         return None, None
 
 
-@st.cache_data(ttl=config.TTL)
+@st.cache_resource(ttl=config.TTL)
 def get_address(coords):
     location = st.session_state.geolocator.reverse(coords)
 
@@ -81,7 +58,7 @@ def get_gmaps_directions_link(destination, travelmode):
     return f"https://www.google.com/maps/dir/?api=1&{urlencode(params)}"
 
 
-@st.cache_data(ttl=config.TTL)
+@st.cache_resource(ttl=config.TTL)
 def query_osm(amenity, radius, location_lat, location_lon):
     query = f"""
     [out:json];
@@ -206,7 +183,7 @@ def get_marker(row, travelmode, amenity):
         location=[row["latitude"], row["longitude"]],
         icon=folium.Icon(
             color="green",
-            icon=AMENITY_ICON_DICT[amenity],
+            icon=config.AMENITY_ICON_DICT[amenity],
             prefix="fa",
         ),
         popup=get_popup(row, travelmode),
@@ -243,9 +220,9 @@ def main():
         with st.form("options_form"):
             amenity = st.selectbox(
                 label="Amenity",
-                options=AMENITY_OPTIONS,
+                options=config.AMENITY_OPTIONS,
                 format_func=lambda x: x.replace("_", " ").title(),
-                index=AMENITY_OPTIONS.index("cafe"),
+                index=config.AMENITY_OPTIONS.index("cafe"),
                 help="See https://wiki.openstreetmap.org/wiki/Key:amenity for details.",
             )
             # location = st.text_input(label="Location", value="Boston, MA", help="Use a city name or address.")
