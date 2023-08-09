@@ -249,7 +249,7 @@ def main():
                 help="See https://wiki.openstreetmap.org/wiki/Key:amenity for details.",
             )
             # location = st.text_input(label="Location", value="Boston, MA", help="Use a city name or address.")
-            street_address = st.text_input("Street Address (optional)", value='1 Summer St')
+            street_address = st.text_input("Street Address (optional)", value="1 Summer St")
             city = st.text_input("City", value="Boston")
             state = st.text_input("State", value="MA", help="Can use full state name or two-letter abbreviation.")
             location = f"{city}, {state}"
