@@ -245,7 +245,10 @@ def main():
             max_results = st.number_input(label="Maximum Number of Results", min_value=1, max_value=1000, value=100)
             attempt_reverse = st.checkbox(
                 "Attempt Reverse Geocoding for missing address from OpenStreetMaps?",
-                help="Use latitude and longitude coordinates for reverse geocoding. Can be used to provide much more complete address information. Will increase run time for each location that is reverse geocoded.",
+                help=(
+                    "Use latitude and longitude coordinates for reverse geocoding. Can be used to provide much more"
+                    " complete address information. Will increase run time for each location that is reverse geocoded."
+                ),
             )
             st.form_submit_button("Submit Search", use_container_width=True)
 
