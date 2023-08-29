@@ -7,11 +7,23 @@ from geopy.geocoders import Nominatim
 import folium
 import streamlit as st
 from streamlit_folium import st_folium
+from streamlit_extras.metric_cards import style_metric_cards
 
-import config
+import config, constants
 
 
 st.set_page_config(page_title="Coffee Finder", page_icon=":coffee:")
+
+
+style_metric_cards(
+    border_left_color=config.STREAMLIT_CONFIG["theme"]["primaryColor"],
+    border_color=config.STREAMLIT_CONFIG["theme"]["secondaryBackgroundColor"],
+    background_color=config.STREAMLIT_CONFIG["theme"]["backgroundColor"],
+    border_size_px=2,
+    border_radius_px=20,
+    box_shadow=False,
+)
+
 
 if not st.session_state.get("geolocator"):
     st.session_state.geolocator = Nominatim(user_agent="coffee_finder_app")
@@ -26,7 +38,7 @@ def get_distance(x, y):
     return geopy.distance.geodesic(x, y).m
 
 
-@st.cache_resource(ttl=config.TTL)
+@st.cache_resource(ttl=constants.TTL)
 def get_latitude_longitude(city_name):
     location = st.session_state.geolocator.geocode(city_name)
 
@@ -36,7 +48,7 @@ def get_latitude_longitude(city_name):
         return None, None
 
 
-@st.cache_resource(ttl=config.TTL)
+@st.cache_resource(ttl=constants.TTL)
 def get_address(coords):
     location = st.session_state.geolocator.reverse(coords)
 
@@ -58,7 +70,7 @@ def get_gmaps_directions_link(destination, travelmode):
     return f"https://www.google.com/maps/dir/?api=1&{urlencode(params)}"
 
 
-@st.cache_resource(ttl=config.TTL)
+@st.cache_resource(ttl=constants.TTL)
 def query_osm(amenity, radius, location_lat, location_lon):
     query = f"""
     [out:json];
@@ -69,7 +81,7 @@ def query_osm(amenity, radius, location_lat, location_lon):
     );
     out center;
     """
-    response = requests.get(config.OVERPASS_URL_BASE, params={"data": query})
+    response = requests.get(constants.OVERPASS_URL_BASE, params={"data": query})
     return response.json()
 
 
@@ -183,7 +195,7 @@ def get_marker(row, travelmode, amenity):
         location=[row["latitude"], row["longitude"]],
         icon=folium.Icon(
             color="green",
-            icon=config.AMENITY_ICON_DICT[amenity],
+            icon=constants.AMENITY_ICON_DICT[amenity],
             prefix="fa",
         ),
         popup=get_popup(row, travelmode),
@@ -220,9 +232,9 @@ def main():
         with st.form("options_form"):
             amenity = st.selectbox(
                 label="Amenity",
-                options=config.AMENITY_OPTIONS,
+                options=constants.AMENITY_OPTIONS,
                 format_func=lambda x: x.replace("_", " ").title(),
-                index=config.AMENITY_OPTIONS.index("cafe"),
+                index=constants.AMENITY_OPTIONS.index("cafe"),
                 help="See https://wiki.openstreetmap.org/wiki/Key:amenity for details.",
             )
             # location = st.text_input(label="Location", value="Boston, MA", help="Use a city name or address.")
@@ -275,13 +287,18 @@ def main():
     generate_map(df, amenity, location, location_latlon, radius, travelmode)
 
     cols = st.columns(2)
-    with cols[0]:
-        st.metric("Number of Matches", df.shape[0])
-    with cols[1]:
-        st.metric("Nearest Match", f'{df["distance (km)"].min()} km')
+    cols[0].metric("Number of Matches", df.shape[0])
+    cols[1].metric("Nearest Match", f'{df["distance (km)"].min()} km')
 
     # Show a downloadable table
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df.rename(columns={
+        "name": "Name", 
+        "address": "Address", 
+        "website": "Website", 
+        "latitude": "Latitude", 
+        "longitude": "Longitude", 
+        "distance (km)": "Distance (km)",
+        }), use_container_width=True)
     st.download_button(
         label="Download CSV",
         data=convert_df(df),

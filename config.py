@@ -1,25 +1,6 @@
-OVERPASS_URL_BASE = "https://overpass-api.de/api/interpreter"
+"""Load and expose the .streamlit/config.toml file as a Python dict."""
 
-TTL = 1 * 60 * 60  # default time-to-live of 1 hour
+import tomllib
 
-AMENITY_OPTIONS = [
-    "bar",
-    "biergarten",
-    "cafe",
-    "fast_food",
-    "food_court",
-    "ice_cream",
-    "pub",
-    "restaurant",
-]
-
-AMENITY_ICON_DICT = {
-    "bar": "beer",
-    "biergarten": "beer",
-    "cafe": "coffee",
-    "fast_food": "cutlery",
-    "food_court": "cutlery",
-    "ice_cream": "diamond",
-    "pub": "beer",
-    "restaurant": "cutlery",
-}
+with open("./.streamlit/config.toml", "rb") as f:
+    STREAMLIT_CONFIG = tomllib.load(f)
