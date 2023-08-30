@@ -261,7 +261,7 @@ def main():
                     " complete address information. Will increase run time for each location that is reverse geocoded."
                 ),
             )
-            st.form_submit_button("Submit Search", use_container_width=True)
+            st.form_submit_button("Submit Search", type="primary", use_container_width=True)
 
     radius = int(radius_km * 1000)
     location_latlon = get_latitude_longitude(location)
