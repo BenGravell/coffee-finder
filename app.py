@@ -12,8 +12,7 @@ from streamlit_extras.metric_cards import style_metric_cards
 import config, constants
 
 
-st.set_page_config(page_title="Coffee Finder", page_icon=":coffee:")
-
+st.set_page_config(page_title="Coffee Finder", page_icon=":coffee:", layout="wide")
 
 style_metric_cards(
     border_left_color=config.STREAMLIT_CONFIG["theme"]["primaryColor"],
