@@ -254,7 +254,7 @@ def main():
                 format_func=lambda x: x.title(),
             )
             max_results = st.number_input(label="Maximum Number of Results", min_value=1, max_value=1000, value=100)
-            attempt_reverse = st.checkbox(
+            attempt_reverse = st.toggle(
                 "Attempt Reverse Geocoding for missing address from OpenStreetMaps?",
                 help=(
                     "Use latitude and longitude coordinates for reverse geocoding. Can be used to provide much more"
