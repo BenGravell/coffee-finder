@@ -1,0 +1,12 @@
+numpy==1.24.3
+pandas==1.5.3
+geopy==2.3.0
+streamlit==1.29.0
+streamlit-folium==0.13.0
+streamlit-extras==0.3.0
+matplotlib==3.6.3
+plotly==5.11.0
+pre-commit==3.3.3
+black==23.7.0
+ruff==0.0.283
+pip-tools==7.3.0
