@@ -216,7 +216,7 @@ soupsieve==2.5
     # via beautifulsoup4
 st-annotated-text==4.0.1
     # via streamlit-extras
-streamlit==1.29.0
+streamlit==1.28.2
     # via
     #   -r requirements.in
     #   markdownlit
@@ -236,7 +236,7 @@ streamlit-card==1.0.0
     # via streamlit-extras
 streamlit-embedcode==0.1.2
     # via streamlit-extras
-streamlit-extras==0.3.6
+streamlit-extras==0.3.5
     # via
     #   -r requirements.in
     #   markdownlit

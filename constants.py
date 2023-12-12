@@ -1,4 +1,8 @@
+APP_TITLE = "Coffee Finder"
+APP_ICON = ":coffee:"
+
 OVERPASS_URL_BASE = "https://overpass-api.de/api/interpreter"
+GOOGLE_MAPS_URL_BASE = "https://www.google.com/maps"
 
 TTL = 1 * 60 * 60  # default time-to-live of 1 hour
 

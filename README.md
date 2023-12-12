@@ -1,6 +1,15 @@
 # Coffee Finder
 An app designed to help you find good coffee.
 
+## Run remotely
+Open the deployed app at https://coffee-finder.streamlit.app/
+
+## Run locally
+Run
+```bash
+streamlit run app.py
+```
+
 
 ## Development
 

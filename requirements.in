@@ -2,9 +2,9 @@ numpy
 pandas
 pandas-stubs
 geopy
-streamlit
+streamlit==1.28.2
 streamlit-folium
-streamlit-extras
+streamlit-extras==0.3.5
 matplotlib
 plotly
 pre-commit
