@@ -12,7 +12,7 @@ attrs==23.1.0
     #   referencing
 beautifulsoup4==4.12.2
     # via favicon
-black==23.7.0
+black==23.11.0
     # via -r requirements.in
 blinker==1.7.0
     # via streamlit
@@ -45,6 +45,8 @@ cycler==0.12.1
     # via matplotlib
 distlib==0.3.7
     # via virtualenv
+entrypoints==0.4
+    # via streamlit-extras
 faker==20.1.0
     # via streamlit-faker
 favicon==0.7.0
@@ -57,13 +59,13 @@ fonttools==4.46.0
     # via matplotlib
 geographiclib==2.0
     # via geopy
-geopy==2.3.0
+geopy==2.4.1
     # via -r requirements.in
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.40
     # via streamlit
-htbuilder==0.6.1
+htbuilder==0.6.2
     # via
     #   markdownlit
     #   st-annotated-text
@@ -102,7 +104,7 @@ markdownlit==0.0.7
     # via streamlit-extras
 markupsafe==2.1.3
     # via jinja2
-matplotlib==3.6.3
+matplotlib==3.8.2
     # via
     #   -r requirements.in
     #   streamlit-faker
@@ -118,7 +120,7 @@ mypy-extensions==1.0.0
     #   mypy
 nodeenv==1.8.0
     # via pre-commit
-numpy==1.24.3
+numpy==1.26.2
     # via
     #   -r requirements.in
     #   altair
@@ -126,6 +128,7 @@ numpy==1.24.3
     #   folium
     #   matplotlib
     #   pandas
+    #   pandas-stubs
     #   pyarrow
     #   pydeck
     #   streamlit
@@ -135,12 +138,15 @@ packaging==23.2
     #   black
     #   build
     #   matplotlib
+    #   plotly
     #   streamlit
-pandas==1.5.3
+pandas==2.1.4
     # via
     #   -r requirements.in
     #   altair
     #   streamlit
+pandas-stubs==2.1.1.230928
+    # via -r requirements.in
 pathspec==0.12.1
     # via black
 pillow==10.1.0
@@ -153,9 +159,9 @@ platformdirs==4.1.0
     # via
     #   black
     #   virtualenv
-plotly==5.11.0
+plotly==5.18.0
     # via -r requirements.in
-pre-commit==3.3.3
+pre-commit==3.6.0
     # via -r requirements.in
 protobuf==4.25.1
     # via
@@ -200,7 +206,7 @@ rpds-py==0.13.2
     # via
     #   jsonschema
     #   referencing
-ruff==0.0.283
+ruff==0.1.7
     # via -r requirements.in
 six==1.16.0
     # via python-dateutil
@@ -230,14 +236,14 @@ streamlit-card==1.0.0
     # via streamlit-extras
 streamlit-embedcode==0.1.2
     # via streamlit-extras
-streamlit-extras==0.3.0
+streamlit-extras==0.3.6
     # via
     #   -r requirements.in
     #   markdownlit
     #   streamlit-faker
 streamlit-faker==0.0.3
     # via streamlit-extras
-streamlit-folium==0.13.0
+streamlit-folium==0.17.3
     # via -r requirements.in
 streamlit-image-coordinates==0.1.6
     # via streamlit-extras
@@ -257,12 +263,16 @@ toolz==0.12.0
     # via altair
 tornado==6.4
     # via streamlit
+types-pytz==2023.3.1.1
+    # via pandas-stubs
 typing-extensions==4.9.0
     # via
     #   mypy
     #   streamlit
 tzdata==2023.3
-    # via tzlocal
+    # via
+    #   pandas
+    #   tzlocal
 tzlocal==5.2
     # via streamlit
 urllib3==2.1.0
