@@ -144,18 +144,28 @@ class MetricsSection:
 class TableSection:
     @staticmethod
     def run(df: pd.DataFrame) -> None:
-        display_df = df.rename(
-            columns={
-                "name": "Name",
-                "address": "Address",
-                "website": "Website",
-                "latitude": "Latitude",
-                "longitude": "Longitude",
-                "distance (km)": "Distance (km)",
-            }
-        )
+        column_config = {
+            "name": st.column_config.TextColumn(
+                "Name",
+            ),
+            "address": st.column_config.TextColumn(
+                "Address",
+            ),
+            "website": st.column_config.LinkColumn(
+                "Website",
+            ),
+            "latitude": st.column_config.NumberColumn(
+                "Latitude",
+            ),
+            "longitude": st.column_config.NumberColumn(
+                "Longitude",
+            ),
+            "distance (km)": st.column_config.NumberColumn(
+                "Distance (km)",
+            ),
+        }
 
-        st.dataframe(display_df, use_container_width=True)
+        st.dataframe(df, column_config=column_config, use_container_width=True)
 
         st.download_button(
             label="Download CSV",
