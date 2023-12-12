@@ -24,4 +24,5 @@ repos:
     rev: v1.7.1
     hooks:
       - id: mypy
-        additional_dependencies: [types-requests, types-setuptools]
+        additional_dependencies: [types-requests, types-setuptools, pandas-stubs]
+        args: [--disallow-untyped-defs, --disallow-untyped-calls]
