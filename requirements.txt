@@ -59,6 +59,8 @@ fonttools==4.46.0
     # via matplotlib
 geographiclib==2.0
     # via geopy
+geojson==3.1.0
+    # via overpass
 geopy==2.4.1
     # via -r requirements.in
 gitdb==4.0.11
@@ -131,7 +133,10 @@ numpy==1.26.2
     #   pandas-stubs
     #   pyarrow
     #   pydeck
+    #   shapely
     #   streamlit
+overpass==0.7
+    # via -r requirements.in
 packaging==23.2
     # via
     #   altair
@@ -199,6 +204,7 @@ requests==2.31.0
     # via
     #   favicon
     #   folium
+    #   overpass
     #   streamlit
 rich==13.7.0
     # via streamlit
@@ -208,6 +214,8 @@ rpds-py==0.13.2
     #   referencing
 ruff==0.1.7
     # via -r requirements.in
+shapely==2.0.2
+    # via overpass
 six==1.16.0
     # via python-dateutil
 smmap==5.0.1

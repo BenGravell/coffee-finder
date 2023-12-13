@@ -2,6 +2,7 @@ numpy
 pandas
 pandas-stubs
 geopy
+overpass
 streamlit==1.28.2
 streamlit-folium
 streamlit-extras==0.3.5
