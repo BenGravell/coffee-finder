@@ -35,8 +35,6 @@ AMENITY_ICON_DICT = {
 }
 
 EXCLUDE_TAG_OPTIONS = ["Starbucks", "Dunkin", "Tim Hortons"]
-
 TRAVEL_MODE_OPTIONS = ["walking", "driving"]
-
 
 FOLIUM_MAP_DEFAULT_ZOOM_LEVEL = 3

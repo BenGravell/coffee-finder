@@ -19,10 +19,10 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
 
-  # Adding mypy
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.7.1
     hooks:
       - id: mypy
-        additional_dependencies: [types-requests, types-setuptools, pandas-stubs]
+        additional_dependencies:
+          [types-requests, types-setuptools, pandas-stubs]
         args: [--disallow-untyped-defs, --disallow-untyped-calls]
