@@ -27,6 +27,7 @@ def set_up_streamlit() -> None:
 
 
 def initialize_session_state() -> None:
+    st.session_state.overpass_api = geo.create_overpass_api()
     st.session_state.geolocator = geo.create_geocoder()
     st.session_state.initialized = True
 

@@ -1,7 +1,7 @@
-import dataclasses
-import requests
 from typing import Any
 
+from geopy.point import Point  # type: ignore[import-not-found]
+from geopy.exc import GeocoderServiceError  # type: ignore[import-not-found]
 import pandas as pd
 import streamlit as st  # type: ignore[import-not-found]
 
@@ -9,25 +9,35 @@ import constants
 import geo
 
 
+def create_query(amenity: str, radius: float, point: Point) -> str:
+    # Define the common query string components
+    amenity_str = f'"amenity"="{amenity}"'
+    around_str = f"around:{radius},{point.latitude},{point.longitude}"
+
+    # Initialize an empty list to hold each part of the query
+    body_lines = []
+
+    # Add each element type (node, way, relation) to the query parts list
+    for element in ["node", "way", "relation"]:
+        body_lines.append(f"{element}[{amenity_str}]({around_str});")
+
+    # Construct the final query string
+    lines = [
+        "(",
+        *[f"    {body_line}" for body_line in body_lines],
+        ");",
+    ]
+    query = "\n".join(lines)
+
+    return query
+
+
 @st.cache_resource(ttl=constants.TTL)
-def query_open_street_map(amenity: str, radius: float, location: geo.Location) -> Any:
-    assert location.latitude_longitude is not None
-    amenity_str = f'''"amenity"="{amenity}"'''
-    around_str = f"around:{radius},{location.latitude_longitude.latitude},{location.latitude_longitude.longitude}"
-    query = f"""
-    [out:json];
-    (
-        node[{amenity_str}]({around_str});
-        way[{amenity_str}]({around_str});
-        relation[{amenity_str}]({around_str});
-    );
-    out center;
-    """
-    response = requests.get(constants.OVERPASS_URL_BASE, params={"data": query})
-    return response.json()
+def query_open_street_map(query: str) -> Any:
+    return st.session_state.overpass_api.get(query, responseformat="json")
 
 
-def get_coords_from_element(element: dict[str, Any]) -> tuple[float | None, float | None]:
+def extract_point_from_element(element: dict[str, Any]) -> tuple[float, float]:
     if element["type"] == "node":
         if "lat" in element and "lon" in element:
             return element["lat"], element["lon"]
@@ -37,15 +47,21 @@ def get_coords_from_element(element: dict[str, Any]) -> tuple[float | None, floa
             if "lat" in element["center"] and "lon" in element["center"]:
                 return element["center"]["lat"], element["center"]["lon"]
 
-    return None, None
+    raise RuntimeError
 
 
-def create_place(element: dict[str, Any], attempt_reverse_geocoding: bool) -> geo.Place:
+def extract_place_data_from_element(
+    element: dict[str, Any], attempt_reverse_geocoding: bool
+) -> tuple[str | None, str | None, str | None, tuple[float, float] | None,]:
     name = None
     address = None
     website = None
+    point = None
 
-    lat, lon = get_coords_from_element(element)
+    try:
+        point = extract_point_from_element(element)
+    except RuntimeError:
+        pass
 
     if "tags" in element:
         tags = element["tags"]
@@ -65,24 +81,30 @@ def create_place(element: dict[str, Any], attempt_reverse_geocoding: bool) -> ge
                     address += f" {postcode}"
         else:
             # Fall back to reverse geocoding by lat/lon if necessary
-            if attempt_reverse_geocoding:
-                address = geo.get_address((lat, lon))
+            if attempt_reverse_geocoding and point is not None:
+                try:
+                    address = geo.get_address_by_reverse_geocoding(point)
+                except GeocoderServiceError:
+                    pass
 
         if "website" in tags:
             website = tags["website"]
 
-    return geo.Place(name, address, website, lat, lon)
+    return name, address, website, point
 
 
-def create_places_df(
-    query_data: Any, deny_list: list[str], max_results: int, attempt_reverse_geocoding: bool
+def compute_places_df(
+    query_data: Any,
+    deny_list: list[str],
+    max_results: int,
+    attempt_reverse_geocoding: bool,
 ) -> pd.DataFrame:
-    places = []
+    places: list[geo.Place] = []
     num_places = 0
     for element in query_data["elements"]:
-        place = create_place(element, attempt_reverse_geocoding)
+        place = geo.Place.from_open_street_map_element(element, attempt_reverse_geocoding)
 
-        if not place.has_name_and_latlon():
+        if not place.has_name_and_point():
             continue
 
         if place.is_denied(deny_list):
@@ -94,4 +116,4 @@ def create_places_df(
         if num_places >= max_results:
             break
 
-    return pd.DataFrame([dataclasses.asdict(place) for place in places])
+    return pd.DataFrame([place.as_flat_dict() for place in places])

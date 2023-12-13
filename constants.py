@@ -1,8 +1,9 @@
 APP_TITLE = "Coffee Finder"
 APP_ICON = ":coffee:"
 
-OVERPASS_URL_BASE = "https://overpass-api.de/api/interpreter"
 GOOGLE_MAPS_URL_BASE = "https://www.google.com/maps"
+
+NOMINATIM_USER_AGENT = "coffee_finder_app"
 
 TTL = 1 * 60 * 60  # default time-to-live of 1 hour
 
@@ -27,3 +28,5 @@ AMENITY_ICON_DICT = {
     "pub": "beer",
     "restaurant": "cutlery",
 }
+
+FOLIUM_MAP_DEFAULT_ZOOM_LEVEL = 3

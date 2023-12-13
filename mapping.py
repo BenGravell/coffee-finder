@@ -58,27 +58,34 @@ def get_marker(row: pd.Series, travel_mode: str, amenity: str) -> folium.Marker:
     )
 
 
-def generate_map(df: pd.DataFrame, amenity: str, location: geo.Location, radius: int, travel_mode: str) -> folium.Map:
-    assert location.latitude_longitude is not None
+def generate_map(home: geo.Place, df: pd.DataFrame, amenity: str, radius: int, travel_mode: str) -> folium.Map:
+    assert home.point is not None
+    home_point_tuple = (home.point.latitude, home.point.longitude)
 
-    folium_map = folium.Map(location=location.latitude_longitude.as_tuple(), zoom_start=3, control_scale=True)
+    # Create map, centered on the home place
+    folium_map = folium.Map(
+        location=home_point_tuple,
+        zoom_start=constants.FOLIUM_MAP_DEFAULT_ZOOM_LEVEL,
+        control_scale=True,
+    )
 
+    # Fit the bounds of the map so all points in the df are shown
     fit_bounds_from_df(folium_map, df)
 
     # Add a marker for each result row
     for i, row in df.iterrows():
         get_marker(row, travel_mode, amenity).add_to(folium_map)
 
-    # Add marker for the center location
+    # Add a marker for the center location
     folium.Marker(
-        location.latitude_longitude.as_tuple(),
-        tooltip=repr(location.physical_address),
+        home_point_tuple,
+        tooltip=home.flat_address,
         icon=folium.Icon(color="lightgray", icon="home", prefix="fa"),
     ).add_to(folium_map)
 
-    # Show disk representing the search area
+    # Show a disk representing the search area
     folium.Circle(
-        location=location.latitude_longitude.as_tuple(),
+        location=home_point_tuple,
         radius=radius,
         color="grey",
         opacity=0.5,

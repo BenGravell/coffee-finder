@@ -27,7 +27,7 @@ class OptionsSection:
             help="See https://wiki.openstreetmap.org/wiki/Key:amenity for details.",
         )
 
-        street_address = st.text_input(
+        street = st.text_input(
             "Street Address (optional)",
             value="1 Summer St",
         )
@@ -41,7 +41,7 @@ class OptionsSection:
             help="Can use full state name or two-letter abbreviation.",
         )
         physical_address = geo.PhysicalAddress(
-            street_address,
+            street,
             city,
             state,
         )
@@ -103,16 +103,16 @@ class OptionsSection:
 
 class ValidationSection:
     @staticmethod
-    def run(location: geo.Location, places_df: pd.DataFrame | None) -> bool:
-        if location.latitude_longitude is None:
+    def run(home: geo.Place, places_df: pd.DataFrame) -> bool:
+        if home.point is None:
             msg = (
-                f"Unable to find latitude and longitude coordinates for physical address {location.physical_address},"
-                " please try a different search."
+                f'Unable to find latitude and longitude coordinates for physical address "{home.flat_address}", please'
+                " try a different search."
             )
             st.error(msg)
             return True
 
-        if places_df is None:
+        if places_df.empty:
             msg = "No matches found!"
             st.error(msg)
             return True
@@ -122,11 +122,11 @@ class ValidationSection:
 
 class MapSection:
     @staticmethod
-    def run(location: geo.Location, places_df: pd.DataFrame, options: options.Options) -> None:
+    def run(home: geo.Place, places_df: pd.DataFrame, options: options.Options) -> None:
         folium_map = mapping.generate_map(
+            home,
             places_df,
             options.amenity,
-            location,
             options.radius,
             options.travel_mode,
         )
@@ -169,6 +169,6 @@ class TableSection:
 
         st.download_button(
             label="Download CSV",
-            data=utils.convert_df_to_csv_utf8(df),
+            data=utils.convert_df_to_csv(df),
             file_name="results.csv",
         )

@@ -1,85 +1,109 @@
 import dataclasses
+from typing import Any
 
+import overpass  # type: ignore[import-not-found]
 from geopy.geocoders import Nominatim  # type: ignore[import-not-found]
-from geopy.distance import geodesic  # type: ignore[import-not-found]
+from geopy.point import Point  # type: ignore[import-not-found]
+from geopy.exc import GeocoderServiceError  # type: ignore[import-not-found]
 import streamlit as st  # type: ignore[import-not-found]
 
 import constants
+import open_street_map_utils as osm
+
+
+def create_overpass_api() -> overpass.API:
+    return overpass.API()
 
 
 def create_geocoder() -> Nominatim:
-    return Nominatim(user_agent="coffee_finder_app")
-
-
-def geodesic_distance_meters(x: tuple[float, float], y: tuple[float, float]) -> float:
-    return geodesic(x, y).m
+    return Nominatim(user_agent=constants.NOMINATIM_USER_AGENT)
 
 
 @dataclasses.dataclass
 class PhysicalAddress:
-    street_address: str
+    street: str
     city: str
     state: str
 
-    def __repr__(self) -> str:
+    def flatten(self) -> str:
         x = f"{self.city}, {self.state}"
-        if self.street_address:
-            x = f"{self.street_address}, {x}"
+        if self.street:
+            x = f"{self.street}, {x}"
         return x
 
-
-@dataclasses.dataclass
-class LatitudeLongitude:
-    latitude: float
-    longitude: float
-
-    def as_tuple(self) -> tuple[float, float]:
-        return (self.latitude, self.longitude)
+    def __repr__(self) -> str:
+        return self.flatten()
 
 
-@st.cache_resource(ttl=constants.TTL)
-def get_latitude_longitude(location: str | PhysicalAddress) -> LatitudeLongitude | None:
-    if isinstance(location, PhysicalAddress):
-        location = repr(location)
+def get_point_by_geocoding(location: PhysicalAddress | str) -> Point:
+    def get_query() -> dict[str, str] | str:
+        if isinstance(location, PhysicalAddress):
+            return dataclasses.asdict(location)
+        if isinstance(location, str):
+            return location
+        raise TypeError
 
-    if geocoded_location := st.session_state.geolocator.geocode(location):
-        return LatitudeLongitude(geocoded_location.latitude, geocoded_location.longitude)
-    else:
-        return None
+    geocoded_location = st.session_state.geolocator.geocode(get_query())
+    if geocoded_location is None:
+        raise GeocoderServiceError
 
-
-@st.cache_resource(ttl=constants.TTL)
-def get_address(coords: tuple[float, float]) -> str | None:
-    location = st.session_state.geolocator.reverse(coords)
-
-    if location:
-        return location.address
-    else:
-        return None
+    return geocoded_location.point
 
 
-@dataclasses.dataclass
-class Location:
-    physical_address: PhysicalAddress
-    latitude_longitude: LatitudeLongitude | None = None
-
-    def __post_init__(self) -> None:
-        if self.latitude_longitude is None:
-            self.latitude_longitude = get_latitude_longitude(self.physical_address)
+def get_address_by_reverse_geocoding(point: Point) -> str | None:
+    geocoded_location = st.session_state.geolocator.reverse(point)
+    if geocoded_location is None:
+        raise GeocoderServiceError
+    return geocoded_location.address
 
 
 @dataclasses.dataclass
 class Place:
     name: str | None = None
-    address: str | None = None
+    address: PhysicalAddress | str | None = None
     website: str | None = None
-    latitude: float | None = None
-    longitude: float | None = None
+    point: Point | None = None
 
-    def has_name_and_latlon(self) -> bool:
-        return not any([val is None for val in [self.name, self.latitude, self.longitude]])
+    @property
+    def flat_address(self) -> str:
+        if isinstance(self.address, PhysicalAddress):
+            return self.address.flatten()
+        if isinstance(self.address, str):
+            return self.address
+        return ""
+
+    @property
+    def structured_address(self) -> PhysicalAddress | str:
+        if isinstance(self.address, PhysicalAddress):
+            return self.address
+        return self.flat_address
+
+    def __post_init__(self) -> None:
+        if self.point is None:
+            try:
+                self.point = get_point_by_geocoding(self.structured_address)
+            except GeocoderServiceError:
+                pass
+
+    @classmethod
+    def from_open_street_map_element(cls, *args: Any, **kwargs: Any) -> "Place":
+        name, address, website, point = osm.extract_place_data_from_element(*args, **kwargs)
+        point = None if point is None else Point(point)
+        return cls(name, address, website, point)
+
+    def has_name_and_point(self) -> bool:
+        return (self.name is not None) and (self.point is not None)
 
     def is_denied(self, deny_list: list[str]) -> bool:
         if self.name is None:
-            return True
+            return False
         return any(deny_name.lower() in self.name.lower() for deny_name in deny_list)
+
+    def as_flat_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "address": self.flat_address,
+            "website": self.website,
+            "latitude": getattr(self.point, "latitude", None),
+            "longitude": getattr(self.point, "longitude", None),
+        }
