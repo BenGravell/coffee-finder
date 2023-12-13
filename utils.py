@@ -28,6 +28,7 @@ def compute_places_df(options: options.Options, home: geo.Place) -> pd.DataFrame
         options.amenity,
         options.radius,
         home.point,
+        options.max_results,
     )
     query_data = osm.query_open_street_map(query)
     df = osm.compute_places_df(
@@ -42,6 +43,7 @@ def compute_places_df(options: options.Options, home: geo.Place) -> pd.DataFrame
     df = add_distance_column(df, home.point)
     df["distance (km)"] = df["distance (km)"].round(2)
     df = df.sort_values("distance (km)")
+    df = df[df["distance (km)"] <= options.radius_km]
     df = df.reset_index(drop=True)
     df.index += 1
 

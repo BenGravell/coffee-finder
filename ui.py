@@ -19,26 +19,28 @@ class TitleSection:
 class OptionsSection:
     @staticmethod
     def get_options_from_ui() -> options.Options:
+        default_options = options.Options()
+
         amenity = st.selectbox(
             label="Amenity",
             options=constants.AMENITY_OPTIONS,
             format_func=lambda x: x.replace("_", " ").title(),
-            index=constants.AMENITY_OPTIONS.index("cafe"),
+            index=constants.AMENITY_OPTIONS.index(default_options.amenity),
             help="See https://wiki.openstreetmap.org/wiki/Key:amenity for details.",
         )
 
         street = st.text_input(
-            "Street Address (optional)",
-            value="1 Summer St",
+            label="Street Address (optional)",
+            value=default_options.physical_address.street,
         )
         city = st.text_input(
-            "City",
-            value="Boston",
+            label="City",
+            value=default_options.physical_address.city,
         )
         state = st.text_input(
-            "State",
-            value="MA",
-            help="Can use full state name or two-letter abbreviation.",
+            label="State",
+            value=default_options.physical_address.state,
+            help="Can use full state name or abbreviation.",
         )
         physical_address = geo.PhysicalAddress(
             street,
@@ -50,31 +52,34 @@ class OptionsSection:
             label="Search Radius (km)",
             min_value=0.0,
             max_value=100.0,
-            value=1.6,
+            value=default_options.radius_km,
             step=0.1,
             format="%.1f",
         )
         deny_list = st.multiselect(
-            "Exclude Tags",
-            ["Starbucks", "Dunkin"],
-            ["Starbucks", "Dunkin"],
+            label="Exclude Tags",
+            options=constants.EXCLUDE_TAG_OPTIONS,
+            default=default_options.deny_list,
         )
         travel_mode = st.selectbox(
-            "Travel Mode for Google Maps directions",
-            options=["walking", "driving"],
+            label="Travel Mode for Google Maps directions",
+            options=constants.TRAVEL_MODE_OPTIONS,
+            index=constants.TRAVEL_MODE_OPTIONS.index(default_options.travel_mode),
             format_func=lambda x: x.title(),
         )
         max_results = st.number_input(
             label="Maximum Number of Results",
             min_value=1,
             max_value=1000,
-            value=100,
+            value=default_options.max_results,
         )
         attempt_reverse_geocoding = st.toggle(
-            "Attempt Reverse Geocoding for missing address from OpenStreetMaps?",
+            label="Attempt Reverse Geocoding for missing address from OpenStreetMaps?",
+            value=default_options.attempt_reverse_geocoding,
             help=(
                 "Use latitude and longitude coordinates for reverse geocoding. Can be used to provide much more"
-                " complete address information. Will increase run time for each location that is reverse geocoded."
+                " complete address information. Will increase run time significantly for each location that is reverse"
+                " geocoded."
             ),
         )
 
@@ -136,9 +141,10 @@ class MapSection:
 class MetricsSection:
     @staticmethod
     def run(df: pd.DataFrame) -> None:
-        cols = st.columns(2)
+        cols = st.columns(3)
         cols[0].metric("Number of Matches", len(df))
-        cols[1].metric("Nearest Match", f'{df["distance (km)"].min()} km')
+        cols[1].metric("Distance to Nearest Match", f'{df["distance (km)"].min()} km')
+        cols[2].metric("Median Distance to All Matches", f'{df["distance (km)"].median()} km')
 
 
 class TableSection:

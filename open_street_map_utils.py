@@ -9,7 +9,7 @@ import constants
 import geo
 
 
-def create_query(amenity: str, radius: float, point: Point) -> str:
+def create_query(amenity: str, radius: float, point: Point, max_results: int) -> str:
     # Define the common query string components
     amenity_str = f'"amenity"="{amenity}"'
     around_str = f"around:{radius},{point.latitude},{point.longitude}"
@@ -23,9 +23,11 @@ def create_query(amenity: str, radius: float, point: Point) -> str:
 
     # Construct the final query string
     lines = [
+        "[out:json];",
         "(",
         *[f"    {body_line}" for body_line in body_lines],
         ");",
+        f"out center {constants.OSM_MAX_RESULTS_MULTIPLIER * max_results};",
     ]
     query = "\n".join(lines)
 
@@ -34,7 +36,7 @@ def create_query(amenity: str, radius: float, point: Point) -> str:
 
 @st.cache_resource(ttl=constants.TTL)
 def query_open_street_map(query: str) -> Any:
-    return st.session_state.overpass_api.get(query, responseformat="json")
+    return st.session_state.overpass_api.get(query, responseformat="json", build=False)
 
 
 def extract_point_from_element(element: dict[str, Any]) -> tuple[float, float]:
