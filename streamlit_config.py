@@ -1,6 +1,8 @@
 """Load and expose the .streamlit/config.toml file as a Python dict."""
 
+from pathlib import Path
+
 import tomllib
 
-with open("./.streamlit/config.toml", "rb") as f:
+with Path("./.streamlit/config.toml").open("rb") as f:
     STREAMLIT_CONFIG = tomllib.load(f)

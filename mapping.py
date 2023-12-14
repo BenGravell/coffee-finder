@@ -1,5 +1,7 @@
-import pandas as pd
+"""Functions to create geographical maps."""
+
 import folium  # type: ignore[import-not-found]
+import pandas as pd
 
 import constants
 import geo
@@ -8,12 +10,14 @@ import html_utils
 
 
 def fit_bounds_from_df(folium_map: folium.Map, df: pd.DataFrame) -> None:
-    sw = df[["latitude", "longitude"]].min().values.tolist()
-    ne = df[["latitude", "longitude"]].max().values.tolist()
+    """Fit map bounds from a DataFrame."""
+    sw = df[["latitude", "longitude"]].min().to_numpy().tolist()
+    ne = df[["latitude", "longitude"]].max().to_numpy().tolist()
     folium_map.fit_bounds([sw, ne])
 
 
-def get_popup(row: pd.Series, travel_mode: str) -> folium.Popup:
+def create_popup(row: pd.Series, travel_mode: str) -> folium.Popup:
+    """Create a Folium Popup."""
     # Header
     if row["website"] is None:
         header_content = row["name"]
@@ -30,7 +34,8 @@ def get_popup(row: pd.Series, travel_mode: str) -> folium.Popup:
         google_maps_destination = f'{row["name"]}, {row["address"]}'
     address = html_utils.tag_wrap(address_text, "small")
     google_maps_content = html_utils.anchor_wrap(
-        text="Google Maps", url=google_maps_utils.get_directions_link(google_maps_destination, travel_mode)
+        text="Google Maps",
+        url=google_maps_utils.get_directions_link(google_maps_destination, travel_mode),
     )
     google_maps = html_utils.tag_wrap(google_maps_content, "small")
 
@@ -43,7 +48,8 @@ def get_popup(row: pd.Series, travel_mode: str) -> folium.Popup:
     return folium.Popup(html, min_width=200, max_width=300)
 
 
-def get_marker(row: pd.Series, travel_mode: str, amenity: str) -> folium.Marker:
+def create_marker(row: pd.Series, travel_mode: str, amenity: str) -> folium.Marker:
+    """Create a Folium Marker."""
     # icons: https://fontawesome.com/v4/icons/
     # examples: https://github.com/lennardv2/Leaflet.awesome-markers/blob/2.0/develop/examples/basic-example.html
     return folium.Marker(
@@ -53,12 +59,13 @@ def get_marker(row: pd.Series, travel_mode: str, amenity: str) -> folium.Marker:
             icon=constants.AMENITY_ICON_DICT[amenity],
             prefix="fa",
         ),
-        popup=get_popup(row, travel_mode),
+        popup=create_popup(row, travel_mode),
         tooltip=f"{row['name']} (click for details)",
     )
 
 
-def generate_map(home: geo.Place, df: pd.DataFrame, amenity: str, radius: int, travel_mode: str) -> folium.Map:
+def create_map(home: geo.Place, df: pd.DataFrame, amenity: str, radius: int, travel_mode: str) -> folium.Map:
+    """Create a Folium Map."""
     assert home.point is not None
     home_point_tuple = (home.point.latitude, home.point.longitude)
 
@@ -72,9 +79,8 @@ def generate_map(home: geo.Place, df: pd.DataFrame, amenity: str, radius: int, t
     # Fit the bounds of the map so all points in the df are shown
     fit_bounds_from_df(folium_map, df)
 
-    # Add a marker for each result row
-    for i, row in df.iterrows():
-        get_marker(row, travel_mode, amenity).add_to(folium_map)
+    # Add a marker for each matched place
+    df.apply(lambda row: create_marker(row, travel_mode, amenity).add_to(folium_map), axis=1)
 
     # Add a marker for the center location
     folium.Marker(

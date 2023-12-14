@@ -1,3 +1,5 @@
+"""Constants."""
+
 APP_TITLE = "Coffee Finder"
 APP_ICON = ":coffee:"
 

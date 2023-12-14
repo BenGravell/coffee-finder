@@ -1,15 +1,23 @@
-from typing import Any
+"""Utilities for interacting with OpenStreetMap."""
 
-from geopy.point import Point  # type: ignore[import-not-found]
-from geopy.exc import GeocoderServiceError  # type: ignore[import-not-found]
+from __future__ import annotations
+
+import contextlib
+from typing import TYPE_CHECKING, Any
+
 import pandas as pd
 import streamlit as st  # type: ignore[import-not-found]
+from geopy.exc import GeocoderServiceError  # type: ignore[import-not-found]
 
 import constants
 import geo
 
+if TYPE_CHECKING:
+    from geopy.point import Point  # type: ignore[import-not-found]
+
 
 def create_query(amenity: str, radius: float, point: Point, max_results: int) -> str:
+    """Create a query for OpenStreetMap."""
     # Define the common query string components
     amenity_str = f'"amenity"="{amenity}"'
     around_str = f"around:{radius},{point.latitude},{point.longitude}"
@@ -18,8 +26,7 @@ def create_query(amenity: str, radius: float, point: Point, max_results: int) ->
     body_lines = []
 
     # Add each element type (node, way, relation) to the query parts list
-    for element in ["node", "way", "relation"]:
-        body_lines.append(f"{element}[{amenity_str}]({around_str});")
+    body_lines = [f"{element}[{amenity_str}]({around_str});" for element in ["node", "way", "relation"]]
 
     # Construct the final query string
     lines = [
@@ -29,41 +36,38 @@ def create_query(amenity: str, radius: float, point: Point, max_results: int) ->
         ");",
         f"out center {constants.OSM_MAX_RESULTS_MULTIPLIER * max_results};",
     ]
-    query = "\n".join(lines)
-
-    return query
+    return "\n".join(lines)
 
 
 @st.cache_resource(ttl=constants.TTL)
 def query_open_street_map(query: str) -> Any:
+    """Execute a query of OpenStreetMap."""
     return st.session_state.overpass_api.get(query, responseformat="json", build=False)
 
 
 def extract_point_from_element(element: dict[str, Any]) -> tuple[float, float]:
-    if element["type"] == "node":
-        if "lat" in element and "lon" in element:
-            return element["lat"], element["lon"]
+    """Extract the coordinates (point) from an OpenStreetMap element."""
+    if element["type"] == "node" and "lat" in element and "lon" in element:
+        return element["lat"], element["lon"]
 
-    if element["type"] == "way":
-        if "center" in element:
-            if "lat" in element["center"] and "lon" in element["center"]:
-                return element["center"]["lat"], element["center"]["lon"]
+    if element["type"] == "way" and "center" in element and "lat" in element["center"] and "lon" in element["center"]:
+        return element["center"]["lat"], element["center"]["lon"]
 
     raise RuntimeError
 
 
 def extract_place_data_from_element(
-    element: dict[str, Any], attempt_reverse_geocoding: bool
-) -> tuple[str | None, str | None, str | None, tuple[float, float] | None,]:
+    element: dict[str, Any],
+    attempt_reverse_geocoding: bool,
+) -> tuple[str | None, str | None, str | None, tuple[float, float] | None]:
+    """Extract place data from an OpenStreetMap element."""
     name = None
     address = None
     website = None
     point = None
 
-    try:
+    with contextlib.suppress(RuntimeError):
         point = extract_point_from_element(element)
-    except RuntimeError:
-        pass
 
     if "tags" in element:
         tags = element["tags"]
@@ -81,13 +85,10 @@ def extract_place_data_from_element(
                 if "addr:postcode" in tags:
                     postcode = tags["addr:postcode"]
                     address += f" {postcode}"
-        else:
+        elif attempt_reverse_geocoding and point is not None:
             # Fall back to reverse geocoding by lat/lon if necessary
-            if attempt_reverse_geocoding and point is not None:
-                try:
-                    address = geo.get_address_by_reverse_geocoding(point)
-                except GeocoderServiceError:
-                    pass
+            with contextlib.suppress(GeocoderServiceError):
+                address = geo.get_address_by_reverse_geocoding(point)
 
         if "website" in tags:
             website = tags["website"]
@@ -101,6 +102,7 @@ def compute_places_df(
     max_results: int,
     attempt_reverse_geocoding: bool,
 ) -> pd.DataFrame:
+    """Compute a DataFrame containing place data."""
     places: list[geo.Place] = []
     num_places = 0
     for element in query_data["elements"]:

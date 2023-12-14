@@ -1,15 +1,18 @@
-from app_manager import AppManager
+"""Streamlit app to find coffee."""
+
+import data_processing
 import geo
 import ui
-import utils
+from app_management import AppManager
 
 
-def main() -> None:
+def run_app() -> None:
+    """Run the entire app."""
     with AppManager():
         ui.TitleSection.run()
         options = ui.OptionsSection.run()
         home = geo.Place(address=options.physical_address)
-        places_df = utils.compute_places_df(options, home)
+        places_df = data_processing.compute_places_df(options, home)
         invalid_results = ui.ValidationSection.run(home, places_df)
         if invalid_results:
             return
@@ -19,4 +22,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_app()

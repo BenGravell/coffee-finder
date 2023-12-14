@@ -1,24 +1,32 @@
+"""User interface for the app."""
+
 import pandas as pd
 import streamlit as st  # type: ignore[import-not-found]
 from streamlit_folium import st_folium  # type: ignore[import-not-found]
 
+import app_options as ao
 import constants
+import data_processing
 import geo
-import options
-import utils
 import mapping
 
 
 class TitleSection:
+    """Title section."""
+
     @staticmethod
     def run() -> None:
+        """Run the section."""
         st.title(f"{constants.APP_ICON} {constants.APP_TITLE}", anchor=False)
 
 
 class OptionsSection:
+    """Options section."""
+
     @staticmethod
-    def get_options_from_ui() -> options.Options:
-        default_options = options.Options()
+    def get_options_from_ui() -> ao.Options:
+        """Get app options from the user interface."""
+        default_options = ao.Options()
 
         amenity = st.selectbox(
             label="Amenity",
@@ -82,7 +90,7 @@ class OptionsSection:
             ),
         )
 
-        return options.Options(
+        return ao.Options(
             amenity,
             physical_address,
             radius_km,
@@ -93,21 +101,24 @@ class OptionsSection:
         )
 
     @classmethod
-    def run(cls) -> options.Options:
-        with st.sidebar:
-            with st.form("options_form"):
-                options = cls.get_options_from_ui()
-                st.form_submit_button(
-                    "Submit Search",
-                    type="primary",
-                    use_container_width=True,
-                )
+    def run(cls) -> ao.Options:
+        """Run the section."""
+        with st.sidebar, st.form("options_form"):
+            options = cls.get_options_from_ui()
+            st.form_submit_button(
+                "Submit Search",
+                type="primary",
+                use_container_width=True,
+            )
         return options
 
 
 class ValidationSection:
+    """Validation section."""
+
     @staticmethod
     def run(home: geo.Place, places_df: pd.DataFrame) -> bool:
+        """Run the section."""
         if home.point is None:
             msg = (
                 f'Unable to find latitude and longitude coordinates for physical address "{home.flat_address}", please'
@@ -125,9 +136,12 @@ class ValidationSection:
 
 
 class MapSection:
+    """Map section."""
+
     @staticmethod
-    def run(home: geo.Place, places_df: pd.DataFrame, options: options.Options) -> None:
-        folium_map = mapping.generate_map(
+    def run(home: geo.Place, places_df: pd.DataFrame, options: ao.Options) -> None:
+        """Run the section."""
+        folium_map = mapping.create_map(
             home,
             places_df,
             options.amenity,
@@ -138,8 +152,11 @@ class MapSection:
 
 
 class MetricsSection:
+    """Metrics section."""
+
     @staticmethod
     def run(df: pd.DataFrame) -> None:
+        """Run the section."""
         cols = st.columns(3)
         cols[0].metric("Number of Matches", len(df))
         cols[1].metric("Distance to Nearest Match", f'{df["distance (km)"].min()} km')
@@ -147,8 +164,11 @@ class MetricsSection:
 
 
 class TableSection:
+    """Table section."""
+
     @staticmethod
     def run(df: pd.DataFrame) -> None:
+        """Run the section."""
         column_config = {
             "name": st.column_config.TextColumn(
                 "Name",
@@ -174,6 +194,6 @@ class TableSection:
 
         st.download_button(
             label="Download CSV",
-            data=utils.convert_df_to_csv(df),
+            data=data_processing.convert_df_to_csv(df),
             file_name="results.csv",
         )
